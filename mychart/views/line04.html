@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title><%= title%></title>
+</head>
+<body>
+<div id="main" style="height:700px;"></div>
+<script src="https://cdn.bootcss.com/echarts/3.6.2/echarts.js"></script>
+<script src="/javascripts/jquery-1.10.2.min.js"></script>
+<script type="text/javascript">
+var start = 20;
+var pre;
+var alldata = [];
+var mychart = echarts.init(document.getElementById('main'));
+$.get('/data/json/confidence-band.json',function(data){
+	pre = data.slice(0,start);
+	alldata = data;
+	mychart.setOption({
+		xAxis: {
+	        type: 'category',
+	        data:pre.map(function(item){
+	        	return item.date;
+	        }),
+	        splitLine: {
+	            show: false
+	        }
+	    },
+	    yAxis: {
+	        type: 'value',
+	        boundaryGap: [0, '100%'],
+	        splitLine: {
+	            show: false
+	        },
+	        max:25,
+	    },
+	    series: [{
+	        name: '模拟数据',
+	        type: 'line',
+	        showSymbol: false,
+	        hoverAnimation: false,
+	        data: pre.map(function(item){
+	        	return item.value*10+15;
+	        })
+	    }]
+	});
+	
+});
+
+var addDate = setInterval(function(){
+	if(start>90){
+		clearInterval(addDate);
+	} else{
+		pre.shift();
+	    pre.push(alldata[start]);
+		mychart.setOption({
+			xAxis:{
+				data:pre.map(function(item){
+		        	return item.date;
+		        })
+			},
+			series:[{
+				data:pre.map(function(item){
+		        	return item.value*10+15;
+		        })
+			}]
+		})
+		start++;
+	}
+},500);
+</script>
+</body>
+</html>

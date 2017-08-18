@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title><%= title%></title>
+</head>
+<body>
+<div id="main" style="height:700px;"></div>
+<script src="https://cdn.bootcss.com/echarts/3.6.2/echarts.js"></script>
+<script src="/javascripts/jquery-1.10.2.min.js"></script>
+<script type="text/javascript">
+var mychart = echarts.init(document.getElementById('main'));
+mychart.showLoading();
+
+$.get('/data/json/confidence-band.json',function(data){
+	mychart.hideLoading();
+	var base = -data.reduce(function (min, val) {
+        return Math.floor(Math.min(min, val.l,val.u,val.value));
+    }, Infinity);
+	console.log(base);
+	mychart.setOption({
+		tooltip:{
+			trigger:'axis',
+			axisPointer:{
+				type:'cross'
+			}
+		},
+		xAxis:{
+			type:'category',
+			data:data.map(function(item){
+				return item.date;
+			}),
+			boundaryGap:false,
+		},
+		yAxis:{
+			type:'value',
+			axisLabel: {
+                formatter: function (val) {
+                    return (val - base) * 100 + '%';
+                }
+            },
+		},
+		series:[{
+			name:'L',
+			type:'line',
+			stack:'confidence',
+			lineStyle:{
+				normal:{
+					opacity:0
+				}
+			},
+			data:data.map(function(item){
+				return item.l + base;
+			}),
+			symbol: 'none'
+		},{
+			name:'U',
+			type:'line',
+			stack:'confidence',
+			lineStyle:{
+				normal:{
+					opacity:0
+				}
+			},
+			data:data.map(function(item){
+				return item.u-item.l;
+			}),
+			areaStyle:{
+				normal:{
+					color:'#ccc'
+				}
+			},
+			symbol: 'none'
+		},{
+			type:'line',
+			data:data.map(function(item){
+				return item.value + base;
+			}),
+			hoverAnimation: false,
+			symbolSize: 6,
+			showSymbol: false
+		}]
+	});
+});
+</script>
+</body>
+</html>
